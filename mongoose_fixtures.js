@@ -2,7 +2,7 @@
 var fs          = require('fs');
 var mongoose    = require('mongoose');
 var async       = require('async');
-    
+var path        = require('path');
 
 /**
  * Clears a collection and inserts the given data as new documents
@@ -27,10 +27,10 @@ var load = exports.load = function(data, db, callback) {
     } else if (typeof data == 'string') {
 
         //Get the absolute dir path if a relative path was given
-        if (data.substr(0, 1) !== '/') {
-            var parentPath = module.parent.filename.split('/');
+        if (path.resolve(data) !== path.normalize(data)) {
+            var parentPath = module.parent.filename.split(path.sep);
             parentPath.pop();
-            data = parentPath.join('/') + '/' + data;
+            data = parentPath.concat([data]).join(path.sep);
         }
 
         //Determine if data is pointing to a file or directory
@@ -137,10 +137,10 @@ function loadObject(data, db, callback) {
 function loadFile(file, db, callback) { 
     callback = callback || function() {};
     
-    if (file.substr(0, 1) !== '/') {
-        var parentPath = module.parent.filename.split('/');
+    if (path.resolve(file) !== path.normalize(file)) {
+        var parentPath = module.parent.filename.split(path.sep);
         parentPath.pop();
-        file = parentPath.join('/') + '/' + file;
+        file = parentPath.join(path.sep) + path.sep + file;
     }
     
     load(require(file), db, callback);
@@ -160,10 +160,10 @@ function loadDir(dir, db, callback) {
     callback = callback || function() {};
     
     //Get the absolute dir path if a relative path was given
-    if (dir.substr(0, 1) !== '/') {
-        var parentPath = module.parent.filename.split('/');
+    if (path.resolve(dir) != path.normalize(dir)) {
+        var parentPath = module.parent.filename.split(path.sep);
         parentPath.pop();
-        dir = parentPath.join('/') + '/' + dir;
+        dir = parentPath.join(path.sep) + path.sep + dir;
     }
     
     //Load each file in directory
@@ -171,7 +171,7 @@ function loadDir(dir, db, callback) {
         if (err) return callback(err);
         
         var iterator = function(file, next){
-            loadFile(dir + '/' + file, db, next);
+            loadFile(dir + path.sep + file, db, next);
         };
         async.forEach(files, iterator, callback);
     });
